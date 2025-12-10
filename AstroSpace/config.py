@@ -116,3 +116,42 @@ SCORE_BLAST_BONUS = 10  # Bonus points per asteroid destroyed by energy blast
 FULLSCREEN_TRANSITION_DURATION = 300  # milliseconds
 SAVE_DISPLAY_PREFERENCES = True
 DISPLAY_PREFERENCES_FILE = os.path.join(BASE_DIR, "display_prefs.json")
+
+# Multi-Stage Level settings - Time-based progression
+LEVEL_DURATION = 30000  # 30 seconds per level
+LEVELS = {
+    1: {
+        'name': 'Dawn in Space',
+        'bg_gradient': [(75, 50, 125), (50, 75, 150)],  # Soft purple & blue
+        'enemy_speed_multiplier': 0.8,
+        'spawn_rate_multiplier': 0.7,
+        'particle_color': (200, 180, 255),
+        'vignette_strength': 0.0
+    },
+    2: {
+        'name': 'Noon Nebula',
+        'bg_gradient': [(255, 100, 150), (100, 200, 255)],  # Bright colorful nebula
+        'enemy_speed_multiplier': 0.9,
+        'spawn_rate_multiplier': 0.8,
+        'particle_color': (255, 200, 100),
+        'vignette_strength': 0.0
+    },
+    3: {
+        'name': 'Dusk Void',
+        'bg_gradient': [(150, 75, 50), (200, 100, 150)],  # Dark orange/pink
+        'enemy_speed_multiplier': 1.4,
+        'spawn_rate_multiplier': 1.3,
+        'particle_color': (255, 150, 100),
+        'vignette_strength': 0.3
+    },
+    4: {
+        'name': 'Midnight Collapse',
+        'bg_gradient': [(10, 10, 20), (0, 50, 100)],  # Deep black + glowing blue
+        'enemy_speed_multiplier': 1.8,
+        'spawn_rate_multiplier': 1.6,
+        'particle_color': (100, 200, 255),
+        'vignette_strength': 0.5
+    }
+}
+MAX_LEVEL = 4
+LOOP_DIFFICULTY_INCREASE = 0.1  # 10% per loop

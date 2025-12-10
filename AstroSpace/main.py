@@ -149,6 +149,14 @@ class Game:
         self.wave_pattern = []  # Store enemy spawn positions from first wave
         self.recording_pattern = True
         
+        # Multi-Stage Level system - Time-based progression
+        self.current_level = 1
+        self.level_start_time = pygame.time.get_ticks()
+        self.loop_count = 0
+        self.level_transition_active = False
+        self.transition_start_time = 0
+        self.particles = []
+        
         # Reset UI elements
         self.health_bar.update(self.player.lives)
         self.score_display.update(0)  # Explicitly set to 0
@@ -169,6 +177,13 @@ class Game:
         try:
             if len(self.enemies) < MAX_ENEMIES:
                 enemy = Enemy(self.assets)
+                
+                # Apply level and loop multipliers
+                level_config = LEVELS.get(self.current_level, LEVELS[1])
+                loop_multiplier = 1 + (self.loop_count * LOOP_DIFFICULTY_INCREASE)
+                
+                enemy.speed_x *= level_config['enemy_speed_multiplier'] * loop_multiplier
+                enemy.speed_y *= level_config['enemy_speed_multiplier'] * loop_multiplier
                 
                 # Record pattern for first wave
                 if self.recording_pattern and self.current_wave == 1:
@@ -733,6 +748,12 @@ class Game:
         # Update powerup indicator
         self.powerup_indicator.update(self.player)
         
+        # Check for time-based level progression
+        self.check_time_level_progression()
+        
+        # Update particles
+        self.update_particles()
+        
         # Update floating texts
         update_floating_texts(self.floating_texts)
         
@@ -745,8 +766,11 @@ class Game:
             new_bullets = self.player.shoot()
             self.bullets.extend(new_bullets)
         
-        # Spawn enemies over time
-        if len(self.enemies) < MAX_ENEMIES and random.random() < 0.02:
+        # Spawn enemies over time with level and loop-based spawn rate
+        level_config = LEVELS.get(self.current_level, LEVELS[1])
+        loop_multiplier = 1 + (self.loop_count * LOOP_DIFFICULTY_INCREASE)
+        spawn_chance = 0.02 * level_config['spawn_rate_multiplier'] * loop_multiplier
+        if len(self.enemies) < MAX_ENEMIES and random.random() < spawn_chance:
             self.spawn_enemy()
     
     def manage_time_waves(self):
@@ -783,6 +807,129 @@ class Game:
                 for pattern_data in self.wave_pattern:
                     if hasattr(pattern_data, 'spawned'):
                         delattr(pattern_data, 'spawned')
+    
+    def check_time_level_progression(self):
+        """Check if it's time to advance to next level (30 seconds)"""
+        current_time = pygame.time.get_ticks()
+        
+        # Skip progression during transition
+        if self.level_transition_active:
+            return
+            
+        if current_time - self.level_start_time >= LEVEL_DURATION:
+            self.start_level_transition()
+    
+    def start_level_transition(self):
+        """Start level transition with fade effect"""
+        self.level_transition_active = True
+        self.transition_start_time = pygame.time.get_ticks()
+        
+        # Advance level
+        if self.current_level < MAX_LEVEL:
+            self.current_level += 1
+        else:
+            self.current_level = 1
+            self.loop_count += 1
+        
+        # Reset level timer
+        self.level_start_time = pygame.time.get_ticks()
+        
+        # Create transition text
+        level_config = LEVELS.get(self.current_level, LEVELS[1])
+        transition_text = f"TIME SHIFT: {level_config['name']}"
+        if self.loop_count > 0:
+            transition_text += f" (Loop {self.loop_count + 1})"
+            
+        self.floating_texts.append(
+            create_floating_text(transition_text, 
+                                (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2),
+                                color=(255, 255, 0))
+        )
+        
+        print(f"Level transition: {transition_text}")
+    
+    def update_particles(self):
+        """Update particle fog effects"""
+        level_config = LEVELS.get(self.current_level, LEVELS[1])
+        
+        # Add new particles
+        if random.random() < 0.1:
+            self.particles.append({
+                'x': random.randint(0, SCREEN_WIDTH),
+                'y': random.randint(0, SCREEN_HEIGHT),
+                'alpha': random.randint(30, 80),
+                'size': random.randint(1, 3),
+                'drift_x': random.uniform(-0.5, 0.5),
+                'drift_y': random.uniform(-0.5, 0.5)
+            })
+        
+        # Update existing particles
+        for particle in self.particles[:]:
+            particle['x'] += particle['drift_x']
+            particle['y'] += particle['drift_y']
+            particle['alpha'] -= 1
+            
+            if particle['alpha'] <= 0 or particle['x'] < 0 or particle['x'] > SCREEN_WIDTH:
+                self.particles.remove(particle)
+    
+    def draw_gradient_background(self, surface):
+        """Draw gradient background for current level"""
+        level_config = LEVELS.get(self.current_level, LEVELS[1])
+        gradient = level_config['bg_gradient']
+        
+        for y in range(SCREEN_HEIGHT):
+            ratio = y / SCREEN_HEIGHT
+            color = [
+                int(gradient[0][i] * (1 - ratio) + gradient[1][i] * ratio)
+                for i in range(3)
+            ]
+            pygame.draw.line(surface, color, (0, y), (SCREEN_WIDTH, y))
+    
+    def draw_particles(self, surface):
+        """Draw particle fog effects"""
+        level_config = LEVELS.get(self.current_level, LEVELS[1])
+        particle_color = level_config['particle_color']
+        
+        for particle in self.particles:
+            color_with_alpha = (*particle_color, particle['alpha'])
+            particle_surface = pygame.Surface((particle['size'] * 2, particle['size'] * 2), pygame.SRCALPHA)
+            pygame.draw.circle(particle_surface, color_with_alpha, 
+                             (particle['size'], particle['size']), particle['size'])
+            surface.blit(particle_surface, (particle['x'], particle['y']))
+    
+    def draw_vignette(self, surface):
+        """Draw vignette effect for dusk and midnight levels"""
+        level_config = LEVELS.get(self.current_level, LEVELS[1])
+        strength = level_config['vignette_strength']
+        
+        if strength > 0:
+            vignette = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+            center_x, center_y = SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2
+            max_radius = max(SCREEN_WIDTH, SCREEN_HEIGHT)
+            
+            for radius in range(0, max_radius, 10):
+                alpha = int(strength * 255 * (radius / max_radius))
+                if alpha > 255:
+                    alpha = 255
+                pygame.draw.circle(vignette, (0, 0, 0, alpha), (center_x, center_y), radius, 10)
+            
+            surface.blit(vignette, (0, 0))
+    
+    def draw_transition_fade(self, surface):
+        """Draw fade effect during level transitions"""
+        if self.level_transition_active:
+            current_time = pygame.time.get_ticks()
+            transition_duration = 1000  # 1 second fade
+            
+            if current_time - self.transition_start_time < transition_duration:
+                fade_progress = (current_time - self.transition_start_time) / transition_duration
+                alpha = int(128 * (1 - abs(fade_progress - 0.5) * 2))  # Fade in and out
+                
+                fade_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
+                fade_surface.fill((0, 0, 0, alpha))
+                surface.blit(fade_surface, (0, 0))
+            else:
+                self.level_transition_active = False
     
     def update_splash(self):
         """Update splash screen"""
@@ -896,9 +1043,11 @@ class Game:
     
     def render_gameplay(self):
         """Render the gameplay screen"""
-        # Draw scrolling background
-        self.screen.blit(self.assets['background'], (0, self.bg_y))
-        self.screen.blit(self.assets['background'], (0, self.bg_y - SCREEN_HEIGHT))
+        # Draw gradient background instead of scrolling image
+        self.draw_gradient_background(self.screen)
+        
+        # Draw particle fog effects
+        self.draw_particles(self.screen)
         
         # Apply screen shake if active
         offset_x, offset_y = self.screen_shake_offset
@@ -917,6 +1066,9 @@ class Game:
         # Draw powerups
         for powerup in self.powerups:
             powerup.draw(self.screen)
+        
+        # Draw vignette effect for dusk/midnight levels
+        self.draw_vignette(self.screen)
         
         # Draw UI elements
         self.health_bar.draw(self.screen)
@@ -937,9 +1089,28 @@ class Game:
             freeze_overlay.fill((255, 255, 255, 50))  # Semi-transparent white tint
             self.screen.blit(freeze_overlay, (0, 0))
         
-        # Draw wave indicator
+        # Draw level and wave indicators at bottom left
+        level_config = LEVELS.get(self.current_level, LEVELS[1])
+        level_text = self.small_font.render(f"Level {self.current_level}: {level_config['name']}", True, WHITE)
         wave_text = self.small_font.render(f"Wave {self.current_wave}", True, WHITE)
-        self.screen.blit(wave_text, (10, 10))
+        
+        # Show time remaining in current level
+        current_time = pygame.time.get_ticks()
+        time_remaining = max(0, LEVEL_DURATION - (current_time - self.level_start_time)) // 1000
+        time_text = self.small_font.render(f"Time: {time_remaining}s", True, WHITE)
+        
+        # Show loop count if > 0 at bottom left
+        bottom_y = SCREEN_HEIGHT - 90
+        if self.loop_count > 0:
+            loop_text = self.small_font.render(f"Loop {self.loop_count + 1} (+{int(self.loop_count * LOOP_DIFFICULTY_INCREASE * 100)}% difficulty)", True, WHITE)
+            self.screen.blit(loop_text, (10, bottom_y - 20))
+        
+        self.screen.blit(level_text, (10, bottom_y))
+        self.screen.blit(wave_text, (10, bottom_y + 20))
+        self.screen.blit(time_text, (10, bottom_y + 40))
+        
+        # Draw transition fade effect
+        self.draw_transition_fade(self.screen)
     
     def render_pause(self):
         """Render the pause screen overlay"""
