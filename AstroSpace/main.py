@@ -1251,8 +1251,8 @@ class Game:
         self.screen.blit(title_text, title_rect)
         
         # Create a semi-transparent white background for instructions
-        instructions_bg = pygame.Surface((500, 300), pygame.SRCALPHA)  # Width and height for the background
-        instructions_bg.fill((255, 255, 255, 180))  # Semi-transparent white
+        instructions_bg = pygame.Surface((600, 380), pygame.SRCALPHA)
+        instructions_bg.fill((255, 255, 255, 180))
         instructions_bg_rect = instructions_bg.get_rect(center=(SCREEN_WIDTH // 2, 300))
         self.screen.blit(instructions_bg, instructions_bg_rect)
         
@@ -1275,12 +1275,12 @@ class Game:
             "with increasing difficulty and variations"
         ]
         
-        y_pos = 180
+        y_pos = 140
         for instruction in instructions:
-            text = self.small_font.render(instruction, True, BLACK)  # Black text on white background
+            text = self.small_font.render(instruction, True, BLACK)
             rect = text.get_rect(center=(SCREEN_WIDTH // 2, y_pos))
             self.screen.blit(text, rect)
-            y_pos += 30
+            y_pos += 25
         
         # Draw buttons
         for button in self.instructions_buttons:
