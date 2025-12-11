@@ -65,14 +65,8 @@ class Player:
         self.blast_radius = ENERGY_BLAST_RADIUS
         self.screen_shake = 0
         
-        # Energy Blast mechanic
-        self.energy = 0
-        self.max_energy = ENERGY_MAX
-        self.is_blasting = False
-        self.blast_frame = 0
-        self.blast_max_frames = ENERGY_BLAST_DURATION
-        self.blast_radius = ENERGY_BLAST_RADIUS
-        self.screen_shake = 0
+        # Weapon Evolution System
+        self.weapon_type = 1  # Start with basic cannon
     
     def handle_input(self, event):
         # Key press events
@@ -143,6 +137,14 @@ class Player:
         elif self.rect.bottom > SCREEN_HEIGHT:
             self.rect.bottom = SCREEN_HEIGHT
     
+    def evolve_weapon(self, level):
+        """Evolve weapon based on current level"""
+        self.weapon_type = min(level, 4)  # Cap at level 4
+    
+    def get_weapon_name(self):
+        """Get current weapon name for UI display"""
+        return WEAPON_TYPES.get(self.weapon_type, WEAPON_TYPES[1])['name']
+    
     def shoot(self):
         """
         Attempt to fire a bullet. Returns a list of bullets fired or an empty list if on cooldown.
@@ -153,16 +155,37 @@ class Player:
             self.last_shot = now
             
             bullets_fired = []
+            weapon_config = WEAPON_TYPES.get(self.weapon_type, WEAPON_TYPES[1])
             
-            if self.double_shot:
-                # Create two bullets side by side
-                bullet1 = Bullet(self.rect.left + 10, self.rect.top, -1)
-                bullet2 = Bullet(self.rect.right - 10, self.rect.top, -1)
-                bullets_fired.extend([bullet1, bullet2])
-            else:
-                # Create a single bullet at the player's position
-                bullet = Bullet(self.rect.centerx, self.rect.top, -1)
+            # Handle different weapon types
+            if self.weapon_type == 1:  # Basic Cannon
+                bullet = Bullet(self.rect.centerx, self.rect.top, -1, self.weapon_type)
                 bullets_fired.append(bullet)
+                
+            elif self.weapon_type == 2:  # Double Laser
+                spread = weapon_config['spread']
+                bullet1 = Bullet(self.rect.centerx, self.rect.top, -1, self.weapon_type, -spread)
+                bullet2 = Bullet(self.rect.centerx, self.rect.top, -1, self.weapon_type, spread)
+                bullets_fired.extend([bullet1, bullet2])
+                
+            elif self.weapon_type == 3:  # Plasma Bursts
+                spread = weapon_config['spread']
+                for i in range(3):
+                    angle = (i - 1) * spread
+                    bullet = Bullet(self.rect.centerx, self.rect.top, -1, self.weapon_type, angle)
+                    bullets_fired.append(bullet)
+                    
+            elif self.weapon_type == 4:  # Dark-matter Railgun
+                bullet = Bullet(self.rect.centerx, self.rect.top, -1, self.weapon_type)
+                bullets_fired.append(bullet)
+            
+            # Handle double shot powerup (multiplies current weapon)
+            if self.double_shot and self.weapon_type != 2:  # Don't double the double laser
+                additional_bullets = []
+                for bullet in bullets_fired:
+                    offset_bullet = Bullet(bullet.rect.centerx + 20, bullet.rect.centery, -1, self.weapon_type, bullet.angle)
+                    additional_bullets.append(offset_bullet)
+                bullets_fired.extend(additional_bullets)
             
             # Play shoot sound if available
             if self.shoot_sound:

@@ -155,3 +155,43 @@ LEVELS = {
 }
 MAX_LEVEL = 4
 LOOP_DIFFICULTY_INCREASE = 0.1  # 10% per loop
+
+# Weapon Evolution System
+WEAPON_TYPES = {
+    1: {  # Dawn - Basic Cannon
+        'name': 'Basic Cannon',
+        'bullet_count': 1,
+        'bullet_speed': 10,
+        'bullet_color': (100, 150, 255),
+        'bullet_size': (4, 8),
+        'spread': 0,
+        'damage': 1
+    },
+    2: {  # Noon - Double Laser
+        'name': 'Double Laser',
+        'bullet_count': 2,
+        'bullet_speed': 12,
+        'bullet_color': (255, 255, 100),
+        'bullet_size': (3, 12),
+        'spread': 15,
+        'damage': 1
+    },
+    3: {  # Dusk - Plasma Bursts
+        'name': 'Plasma Bursts',
+        'bullet_count': 3,
+        'bullet_speed': 8,
+        'bullet_color': (255, 100, 255),
+        'bullet_size': (6, 6),
+        'spread': 25,
+        'damage': 2
+    },
+    4: {  # Midnight - Dark-matter Railgun
+        'name': 'Dark-matter Railgun',
+        'bullet_count': 1,
+        'bullet_speed': 20,
+        'bullet_color': (150, 50, 255),
+        'bullet_size': (8, 20),
+        'spread': 0,
+        'damage': 3
+    }
+}

@@ -157,6 +157,9 @@ class Game:
         self.transition_start_time = 0
         self.particles = []
         
+        # Initialize weapon evolution system
+        self.player.evolve_weapon(self.current_level)
+        
         # Reset UI elements
         self.health_bar.update(self.player.lives)
         self.score_display.update(0)  # Explicitly set to 0
@@ -831,6 +834,9 @@ class Game:
             self.current_level = 1
             self.loop_count += 1
         
+        # Evolve player weapon based on new level
+        self.player.evolve_weapon(self.current_level)
+        
         # Reset level timer
         self.level_start_time = pygame.time.get_ticks()
         
@@ -844,6 +850,15 @@ class Game:
             create_floating_text(transition_text, 
                                 (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2),
                                 color=(255, 255, 0))
+        )
+        
+        # Add weapon evolution notification
+        weapon_name = self.player.get_weapon_name()
+        weapon_color = WEAPON_TYPES[self.player.weapon_type]['bullet_color']
+        self.floating_texts.append(
+            create_floating_text(f"WEAPON EVOLVED: {weapon_name}", 
+                                (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 50),
+                                color=weapon_color)
         )
         
         print(f"Level transition: {transition_text}")
@@ -1094,6 +1109,9 @@ class Game:
         level_text = self.small_font.render(f"Level {self.current_level}: {level_config['name']}", True, WHITE)
         wave_text = self.small_font.render(f"Wave {self.current_wave}", True, WHITE)
         
+        # Show current weapon
+        weapon_text = self.small_font.render(f"Weapon: {self.player.get_weapon_name()}", True, WEAPON_TYPES[self.player.weapon_type]['bullet_color'])
+        
         # Show time remaining in current level
         current_time = pygame.time.get_ticks()
         time_remaining = max(0, LEVEL_DURATION - (current_time - self.level_start_time)) // 1000
@@ -1108,6 +1126,7 @@ class Game:
         self.screen.blit(level_text, (10, bottom_y))
         self.screen.blit(wave_text, (10, bottom_y + 20))
         self.screen.blit(time_text, (10, bottom_y + 40))
+        self.screen.blit(weapon_text, (10, bottom_y + 60))
         
         # Draw transition fade effect
         self.draw_transition_fade(self.screen)
