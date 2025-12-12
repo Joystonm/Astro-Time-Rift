@@ -4,6 +4,7 @@ import sys
 import os
 import random
 import json
+import asyncio
 from player import Player
 from enemy import Enemy
 from bullet import Bullet
@@ -1428,14 +1429,15 @@ class Game:
             self.energy_bar.current_energy = self.player.energy
             self.energy_bar.is_charged = self.player.energy >= self.player.max_energy
     
-    def run(self):
+    async def run(self):
         """Main game loop"""
         while True:
             self.handle_events()
             self.update()
             self.render()
             self.clock.tick(FPS)
+            await asyncio.sleep(0)
 
 if __name__ == "__main__":
     game = Game()
-    game.run()
+    asyncio.run(game.run())

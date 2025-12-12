@@ -70,8 +70,8 @@ POWERUP_LIFE_IMG = None    # Will create in code
 
 # Sound files
 SHOOT_SOUND = os.path.join(SOUNDS_DIR, "shot.ogg")
-EXPLOSION_SOUND = os.path.join(SOUNDS_DIR, "boom.wav")
-BACKGROUND_MUSIC = os.path.join(SOUNDS_DIR, "Cool Space Music.mp3")
+EXPLOSION_SOUND = os.path.join(SOUNDS_DIR, "boom.ogg")
+BACKGROUND_MUSIC = os.path.join(SOUNDS_DIR, "Cool Space Music.ogg")
 POWERUP_SOUND = os.path.join(SOUNDS_DIR, "shot.ogg")  # Reusing existing sound as placeholder
 
 # Font files
